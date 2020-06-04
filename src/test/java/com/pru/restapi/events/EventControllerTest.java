@@ -39,6 +39,38 @@ public class EventControllerTest {
 
 	@Test
 	public void createEvent() throws Exception {
+		EventDto event = EventDto.builder()
+				.name("spring")
+				.description("descrirpt")
+				.beginEnrollmentDateTime(LocalDateTime.of(2020, 6, 3, 11, 0, 0))
+				.closeEnrollmentDateTime(LocalDateTime.of(2020, 6, 4, 11, 0, 0))
+				.beginEventDateTime(LocalDateTime.of(2020, 6, 3, 11, 0, 0))
+				.endEventDateTime(LocalDateTime.of(2020, 6, 4, 11, 0, 0))
+				.basePrice(100)
+				.maxPrice(200)
+				.limitOfEnrollment(100)
+				.location("강남")
+				.build();
+
+		// mockito에서 넘겨준 객체가 controller 내부에서 변환되면 전달될 수 없음
+//		Mockito.when(eventRepository.save(event)).thenReturn(event);
+
+		mockMvc.perform(post("/api/events/")
+					.contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaTypes.HAL_JSON)
+					.content(objectMapper.writeValueAsString(event)))
+				.andDo(print())
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("id").exists())
+				.andExpect(header().exists(HttpHeaders.LOCATION))
+				.andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
+				.andExpect(jsonPath("id").value(Matchers.not(100)))
+				.andExpect(jsonPath("free").value(Matchers.not(true)))
+		;
+	}
+
+	@Test
+	public void createEvent_Bad_Request() throws Exception {
 		Event event = Event.builder()
 				.id(100)
 				.name("spring")
@@ -60,15 +92,11 @@ public class EventControllerTest {
 //		Mockito.when(eventRepository.save(event)).thenReturn(event);
 
 		mockMvc.perform(post("/api/events/")
-					.contentType(MediaType.APPLICATION_JSON)
-					.accept(MediaTypes.HAL_JSON)
-					.content(objectMapper.writeValueAsString(event)))
+				.contentType(MediaType.APPLICATION_JSON)
+				.accept(MediaTypes.HAL_JSON)
+				.content(objectMapper.writeValueAsString(event)))
 				.andDo(print())
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("id").exists())
-				.andExpect(header().exists(HttpHeaders.LOCATION))
-				.andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
-				.andExpect(jsonPath("id").value(Matchers.not(100)))
-				.andExpect(jsonPath("free").value(Matchers.not(true)));
+				.andExpect(status().isBadRequest())
+		;
 	}
 }
